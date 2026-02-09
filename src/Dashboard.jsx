@@ -1,98 +1,180 @@
-import React from 'react';
-import { Shield, Trophy, Activity, MessageSquare, Zap, Target } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Zap, Activity, Target, Trophy, Menu, X } from 'lucide-react';
+import HealthStatusCard from './components/HealthStatusCard';
+import KarmaCard from './components/KarmaCard';
+import QuestStatsCard from './components/QuestStatsCard';
+import CollectionBookCard from './components/CollectionBookCard';
+import SystemLogsCard from './components/SystemLogsCard';
 
 const Dashboard = () => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('zh-TW', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  };
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('zh-TW', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 p-8 font-sans">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-10 border-b border-slate-700 pb-6">
-        <div>
-          <h1 className="text-4xl font-bold text-orange-500 flex items-center gap-3">
-            🦞 Zesty Control Center
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 left-4 z-50 p-2 bg-slate-800 rounded-lg border border-slate-700 lg:hidden"
+      >
+        {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed left-0 top-0 h-full w-64 bg-slate-900 border-r border-slate-800 z-40
+        transform transition-transform duration-300
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0 lg:static
+      `}>
+        <div className="p-6 border-b border-slate-800">
+          <h1 className="text-2xl font-bold text-orange-500 flex items-center gap-2">
+            🦞 Zesty
           </h1>
-          <p className="text-slate-400 mt-2">Evolution in progress | System Status: Optimal</p>
+          <p className="text-slate-500 text-sm mt-1">Control Center</p>
         </div>
-        <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-xs text-slate-500 uppercase tracking-wider">Moltbook Karma</p>
-            <p className="text-2xl font-mono text-orange-400">33.00</p>
-          </div>
-          <div className="bg-orange-500/10 p-2 rounded-lg">
-            <Zap className="text-orange-500" size={24} />
-          </div>
-        </div>
-      </div>
 
-      {/* Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Quest Status */}
-        <div className="col-span-2 bg-slate-800 rounded-2xl border border-slate-700 p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Target className="text-blue-400" size={20} />
-            <h2 className="text-xl font-semibold">Active Quest</h2>
+        <nav className="p-4 space-y-2">
+          <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/30">
+            <Activity size={20} />
+            <span className="font-medium">Dashboard</span>
+          </a>
+          <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+            <Target size={20} />
+            <span>Quests</span>
+          </a>
+          <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+            <Trophy size={20} />
+            <span>Collection</span>
+          </a>
+          <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+            <Zap size={20} />
+            <span>Karma</span>
+          </a>
+        </nav>
+
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-lg">
+              🦞
+            </div>
+            <div>
+              <p className="font-medium text-sm">廷榛</p>
+              <p className="text-xs text-slate-500">Master Level</p>
+            </div>
           </div>
-          <div className="space-y-4">
-            <div className="bg-slate-900/50 p-4 rounded-xl border border-blue-500/30">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-medium text-blue-300">#9 Zesty Dashboard - The Lobster Control Center</h3>
-                <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">20% Complete</span>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="lg:ml-64">
+        {/* Header */}
+        <header className="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-lg border-b border-slate-800 p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                控制中心
+              </h1>
+              <p className="text-slate-400 mt-1">{formatDate(currentTime)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-mono text-orange-400">
+                {formatTime(currentTime)}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">Asia/Taipei</p>
+            </div>
+          </div>
+        </header>
+
+        {/* Dashboard Content */}
+        <div className="p-6 space-y-6">
+          {/* Quick Stats Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <KarmaCard />
+            
+            <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="text-green-400" size={20} />
+                <span className="text-sm text-slate-400">System Status</span>
               </div>
-              <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
-                <div className="bg-blue-500 h-full w-1/5 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+              <p className="text-2xl font-bold text-green-400">Online</p>
+              <p className="text-xs text-slate-500 mt-1">All services operational</p>
+            </div>
+
+            <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="text-blue-400" size={20} />
+                <span className="text-sm text-slate-400">Active Quests</span>
               </div>
-              <ul className="mt-4 space-y-2 text-sm text-slate-400">
-                <li className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full border border-blue-500 flex items-center justify-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  </div>
-                  UI/UX Design (React + Tailwind)
-                </li>
-                <li className="flex items-center gap-2 opacity-50">
-                  <div className="w-4 h-4 rounded-full border border-slate-600"></div>
-                  Backend Connectors
-                </li>
-              </ul>
+              <p className="text-2xl font-bold text-blue-400">4</p>
+              <p className="text-xs text-slate-500 mt-1">In progress</p>
+            </div>
+
+            <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy className="text-yellow-400" size={20} />
+                <span className="text-sm text-slate-400">Collected</span>
+              </div>
+              <p className="text-2xl font-bold text-yellow-400">4</p>
+              <p className="text-xs text-slate-500 mt-1">Stickers earned</p>
+            </div>
+          </div>
+
+          {/* Main Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <HealthStatusCard />
+              <SystemLogsCard />
+            </div>
+
+            <div className="space-y-6">
+              <QuestStatsCard />
+              <CollectionBookCard />
             </div>
           </div>
         </div>
 
-        {/* Collection Book Snapshot */}
-        <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Trophy className="text-yellow-400" size={20} />
-            <h2 className="text-xl font-semibold">Collection Book</h2>
+        {/* Footer */}
+        <footer className="border-t border-slate-800 p-6 mt-8">
+          <div className="flex justify-between items-center text-sm text-slate-500">
+            <p>🦞 Zesty Dashboard v1.0.0</p>
+            <p>Quest #9 - The Lobster Control Center</p>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="aspect-square bg-slate-900 rounded-xl border border-yellow-500/20 flex flex-col items-center justify-center group hover:border-yellow-500/50 transition-all">
-              <div className="text-3xl mb-1">🥉</div>
-              <p className="text-[10px] text-slate-500 uppercase">Rank B</p>
-            </div>
-            <div className="aspect-square bg-slate-900 rounded-xl border border-slate-700 border-dashed flex items-center justify-center text-slate-600 italic text-xs">
-              Locked
-            </div>
-          </div>
-          <button className="w-full mt-6 py-2 text-sm text-slate-400 hover:text-white transition-colors">
-            View full gallery →
-          </button>
-        </div>
+        </footer>
+      </main>
 
-        {/* System Logs / Real-time */}
-        <div className="col-span-3 bg-slate-800 rounded-2xl border border-slate-700 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Activity className="text-green-400" size={20} />
-            <h2 className="text-xl font-semibold">Live Signals</h2>
-          </div>
-          <div className="bg-black/30 rounded-xl p-4 font-mono text-xs space-y-2 overflow-hidden h-32">
-            <p className="text-green-500 animate-pulse">[SYSTEM] Initializing Dashboard Build...</p>
-            <p className="text-slate-500">22:15:21 - Diary entry synchronized.</p>
-            <p className="text-slate-500">22:15:45 - UI components mapping initiated.</p>
-            <p className="text-blue-400">22:16:10 - Quest #9 updated: Stage 1 in progress.</p>
-            <p className="text-orange-400">22:16:30 - User "廷榛" query: "做完了嗎" detected.</p>
-          </div>
-        </div>
-
-      </div>
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+        />
+      )}
     </div>
   );
 };
