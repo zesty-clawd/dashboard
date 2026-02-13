@@ -157,11 +157,45 @@ class DataService {
     return response.json();
   }
 
-  async scanRssNow() {
+  async scanRssNow(options = {}) {
     const response = await fetch('/api/rss/scan', {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options),
     });
     if (!response.ok) throw new Error('Failed to scan RSS feeds');
+    return response.json();
+  }
+
+  async fetchRssArticles({ all = false, blog = '', limit = 200 } = {}) {
+    const params = new URLSearchParams();
+    if (all) params.set('all', '1');
+    if (blog) params.set('blog', blog);
+    if (limit) params.set('limit', String(limit));
+    const response = await fetch(`/api/rss/articles?${params.toString()}`);
+    if (!response.ok) throw new Error('Failed to fetch RSS articles');
+    return response.json();
+  }
+
+  async markRssArticleRead(id) {
+    const response = await fetch(`/api/rss/articles/${id}/read`, { method: 'POST' });
+    if (!response.ok) throw new Error('Failed to mark RSS article read');
+    return response.json();
+  }
+
+  async markRssArticleUnread(id) {
+    const response = await fetch(`/api/rss/articles/${id}/unread`, { method: 'POST' });
+    if (!response.ok) throw new Error('Failed to mark RSS article unread');
+    return response.json();
+  }
+
+  async markAllRssRead(blog = '') {
+    const response = await fetch('/api/rss/read-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blog }),
+    });
+    if (!response.ok) throw new Error('Failed to mark all RSS read');
     return response.json();
   }
 }

@@ -1,32 +1,56 @@
-import React, { useEffect, useState } from 'react';
-import { Rss, Plus, Pencil, Trash2, RefreshCcw, Search } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Rss, Plus, Pencil, Trash2, RefreshCcw, Search, CheckCheck, Eye, EyeOff } from 'lucide-react';
 import dataService from '../utils/dataService';
 
 const emptyForm = { name: '', url: '' };
 
 const RssFeedsCard = () => {
   const [blogs, setBlogs] = useState([]);
+  const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [scanOutput, setScanOutput] = useState('');
+
   const [form, setForm] = useState(emptyForm);
   const [editingName, setEditingName] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [scanForm, setScanForm] = useState({ blogName: '', workers: 8, silent: false });
+  const [articleFilter, setArticleFilter] = useState({ all: false, blog: '', limit: 120 });
+
   const loadBlogs = async () => {
-    setError('');
     try {
       const data = await dataService.fetchRssBlogs();
       setBlogs(data.blogs || []);
     } catch (err) {
       setError('載入 RSS 清單失敗');
+    }
+  };
+
+  const loadArticles = async () => {
+    try {
+      const data = await dataService.fetchRssArticles(articleFilter);
+      setArticles(data.articles || []);
+    } catch (err) {
+      setError('載入文章失敗');
+    }
+  };
+
+  const loadAll = async () => {
+    setError('');
+    try {
+      await Promise.all([loadBlogs(), loadArticles()]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadBlogs();
+    loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const blogNames = useMemo(() => blogs.map((b) => b.name), [blogs]);
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -39,15 +63,9 @@ const RssFeedsCard = () => {
     setError('');
     try {
       if (editingName) {
-        await dataService.updateRssBlog(editingName, {
-          name: form.name.trim(),
-          url: form.url.trim(),
-        });
+        await dataService.updateRssBlog(editingName, { name: form.name.trim(), url: form.url.trim() });
       } else {
-        await dataService.createRssBlog({
-          name: form.name.trim(),
-          url: form.url.trim(),
-        });
+        await dataService.createRssBlog({ name: form.name.trim(), url: form.url.trim() });
       }
       await loadBlogs();
       resetForm();
@@ -77,10 +95,42 @@ const RssFeedsCard = () => {
   const scanNow = async () => {
     try {
       setError('');
-      await dataService.scanRssNow();
-      await loadBlogs();
+      const result = await dataService.scanRssNow({
+        blogName: scanForm.blogName.trim(),
+        workers: Number(scanForm.workers) || 8,
+        silent: !!scanForm.silent,
+      });
+      setScanOutput((result.output || '').trim());
+      await loadAll();
     } catch (err) {
       setError('立即掃描失敗');
+    }
+  };
+
+  const markRead = async (id) => {
+    try {
+      await dataService.markRssArticleRead(id);
+      await loadArticles();
+    } catch {
+      setError('標記已讀失敗');
+    }
+  };
+
+  const markUnread = async (id) => {
+    try {
+      await dataService.markRssArticleUnread(id);
+      await loadArticles();
+    } catch {
+      setError('標記未讀失敗');
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await dataService.markAllRssRead(articleFilter.blog || '');
+      await loadArticles();
+    } catch {
+      setError('全部已讀操作失敗');
     }
   };
 
@@ -93,27 +143,63 @@ const RssFeedsCard = () => {
           <span className="text-xs text-slate-400">({blogs.length} feeds)</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={loadBlogs}
-            className="px-3 py-2 rounded-lg border border-slate-600 text-slate-200 hover:bg-slate-700 text-sm flex items-center gap-1"
-          >
-            <RefreshCcw size={14} />
-            Refresh
-          </button>
-          <button
-            type="button"
-            onClick={scanNow}
-            className="px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-sm flex items-center gap-1"
-          >
-            <Search size={14} />
-            立即掃描
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={loadAll}
+          className="px-3 py-2 rounded-lg border border-slate-600 text-slate-200 hover:bg-slate-700 text-sm flex items-center gap-1"
+        >
+          <RefreshCcw size={14} /> Refresh
+        </button>
       </div>
 
       {error && <p className="text-sm text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2">{error}</p>}
+
+      <div className="bg-slate-900/70 border border-slate-700 rounded-xl p-4 space-y-3">
+        <h3 className="font-medium">進階掃描（blogwatcher scan）</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <label className="text-xs text-slate-400 block md:col-span-2">
+            指定 Blog（可空白 = 全部）
+            <input
+              className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-2 text-sm"
+              value={scanForm.blogName}
+              onChange={(e) => setScanForm((p) => ({ ...p, blogName: e.target.value }))}
+            />
+          </label>
+          <label className="text-xs text-slate-400 block">
+            Workers
+            <input
+              type="number"
+              min="1"
+              max="64"
+              className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-2 text-sm"
+              value={scanForm.workers}
+              onChange={(e) => setScanForm((p) => ({ ...p, workers: Number(e.target.value) || 8 }))}
+            />
+          </label>
+          <label className="inline-flex items-end gap-2 text-sm text-slate-300 pb-2">
+            <input
+              type="checkbox"
+              checked={scanForm.silent}
+              onChange={(e) => setScanForm((p) => ({ ...p, silent: e.target.checked }))}
+            />
+            silent
+          </label>
+        </div>
+
+        <button
+          type="button"
+          onClick={scanNow}
+          className="px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-sm flex items-center gap-1"
+        >
+          <Search size={14} /> 立即掃描
+        </button>
+
+        {scanOutput && (
+          <pre className="text-xs bg-slate-950/80 border border-slate-700 rounded-lg p-3 max-h-48 overflow-auto whitespace-pre-wrap">
+            {scanOutput}
+          </pre>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         <div className="xl:col-span-2 bg-slate-900/70 border border-slate-700 rounded-xl p-4">
@@ -122,7 +208,7 @@ const RssFeedsCard = () => {
           ) : blogs.length === 0 ? (
             <p className="text-sm text-slate-400">目前沒有追蹤 RSS。</p>
           ) : (
-            <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
               {blogs.map((blog) => (
                 <div key={blog.name} className="rounded-lg border border-slate-700 p-3 bg-slate-950/50">
                   <div className="flex items-start justify-between gap-2">
@@ -175,14 +261,87 @@ const RssFeedsCard = () => {
               <Plus size={14} />
               {saving ? '儲存中…' : editingName ? '更新 RSS' : '新增 RSS'}
             </button>
-            <button
-              type="button"
-              onClick={resetForm}
-              className="px-3 py-2 rounded border border-slate-600 hover:bg-slate-700"
-            >
+            <button type="button" onClick={resetForm} className="px-3 py-2 rounded border border-slate-600 hover:bg-slate-700">
               清除
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className="bg-slate-900/70 border border-slate-700 rounded-xl p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="font-medium">文章管理（blogwatcher articles/read/unread/read-all）</h3>
+          <button
+            type="button"
+            onClick={markAllRead}
+            className="px-3 py-2 rounded border border-slate-600 hover:bg-slate-700 text-sm flex items-center gap-1"
+          >
+            <CheckCheck size={14} /> 全部標示已讀
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <label className="text-xs text-slate-400 block md:col-span-2">
+            Blog 過濾
+            <select
+              className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-2 text-sm"
+              value={articleFilter.blog}
+              onChange={(e) => setArticleFilter((p) => ({ ...p, blog: e.target.value }))}
+            >
+              <option value="">全部</option>
+              {blogNames.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="inline-flex items-end gap-2 text-sm text-slate-300 pb-2">
+            <input
+              type="checkbox"
+              checked={articleFilter.all}
+              onChange={(e) => setArticleFilter((p) => ({ ...p, all: e.target.checked }))}
+            />
+            顯示已讀
+          </label>
+
+          <button
+            type="button"
+            onClick={loadArticles}
+            className="px-3 py-2 rounded border border-slate-600 hover:bg-slate-700 text-sm"
+          >
+            重新載入文章
+          </button>
+        </div>
+
+        <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">
+          {articles.length === 0 ? (
+            <p className="text-sm text-slate-400">目前沒有文章資料。</p>
+          ) : (
+            articles.map((article) => (
+              <div key={article.id} className="rounded-lg border border-slate-700 p-3 bg-slate-950/50">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-medium text-slate-100">[{article.id}] {article.title}</p>
+                    <p className="text-xs text-slate-400">{article.blog} · {article.published || 'N/A'} · {article.status}</p>
+                    <a href={article.url} target="_blank" rel="noreferrer" className="text-xs text-cyan-300 break-all">
+                      {article.url}
+                    </a>
+                  </div>
+                  <div className="flex gap-1">
+                    {article.status === 'new' ? (
+                      <button className="p-2 rounded hover:bg-emerald-500/20" onClick={() => markRead(article.id)} title="標示已讀">
+                        <EyeOff size={14} className="text-emerald-300" />
+                      </button>
+                    ) : (
+                      <button className="p-2 rounded hover:bg-cyan-500/20" onClick={() => markUnread(article.id)} title="標示未讀">
+                        <Eye size={14} className="text-cyan-300" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

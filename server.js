@@ -89,6 +89,46 @@ function parseBlogwatcherBlogs(raw) {
   return blogs.filter((blog) => blog.name);
 }
 
+function parseBlogwatcherArticles(raw) {
+  const lines = raw.split(/\r?\n/);
+  const articles = [];
+  let current = null;
+  let mode = 'unread';
+
+  for (const line of lines) {
+    if (line.startsWith('All articles')) mode = 'all';
+    if (line.startsWith('Unread articles')) mode = 'unread';
+
+    const idTitleMatch = line.match(/^\s*\[(\d+)\]\s*\[(new|read)\]\s*(.+)$/);
+    if (idTitleMatch) {
+      if (current) articles.push(current);
+      current = {
+        id: Number(idTitleMatch[1]),
+        status: idTitleMatch[2],
+        title: idTitleMatch[3].trim(),
+        blog: '',
+        url: '',
+        published: '',
+        mode,
+      };
+      continue;
+    }
+
+    if (!current) continue;
+
+    const blogMatch = line.match(/^\s*Blog:\s*(.+)$/);
+    const urlMatch = line.match(/^\s*URL:\s*(.+)$/);
+    const publishedMatch = line.match(/^\s*Published:\s*(.+)$/);
+
+    if (blogMatch) current.blog = blogMatch[1].trim();
+    if (urlMatch) current.url = urlMatch[1].trim();
+    if (publishedMatch) current.published = publishedMatch[1].trim();
+  }
+
+  if (current) articles.push(current);
+  return articles;
+}
+
 // Stickers: serve files directly
 app.use('/stickers', express.static(STICKERS_DIR));
 
@@ -386,10 +426,63 @@ app.delete('/api/rss/blogs/:name', async (req, res) => {
   }
 });
 
-app.post('/api/rss/scan', async (_req, res) => {
+app.get('/api/rss/articles', async (req, res) => {
   try {
-    const stdout = await runBlogwatcher(['scan']);
+    const args = ['articles'];
+    if (req.query.all === '1' || req.query.all === 'true') args.push('--all');
+    if (req.query.blog) args.push('--blog', String(req.query.blog));
+
+    const stdout = await runBlogwatcher(args);
+    const articles = parseBlogwatcherArticles(stdout);
+    const limit = Number(req.query.limit) || 200;
+    return res.json({ articles: articles.slice(0, Math.max(1, Math.min(limit, 1000))) });
+  } catch (error) {
+    console.error('Error listing articles:', error);
+    return res.status(500).json({ error: 'Failed to list articles' });
+  }
+});
+
+app.post('/api/rss/articles/:id/read', async (req, res) => {
+  try {
+    await runBlogwatcher(['read', String(req.params.id)]);
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Error marking article read:', error);
+    return res.status(500).json({ error: 'Failed to mark article read' });
+  }
+});
+
+app.post('/api/rss/articles/:id/unread', async (req, res) => {
+  try {
+    await runBlogwatcher(['unread', String(req.params.id)]);
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Error marking article unread:', error);
+    return res.status(500).json({ error: 'Failed to mark article unread' });
+  }
+});
+
+app.post('/api/rss/read-all', async (req, res) => {
+  try {
+    const args = ['read-all', '--yes'];
+    if (req.body?.blog) args.push('--blog', String(req.body.blog));
+    const stdout = await runBlogwatcher(args);
     return res.json({ ok: true, output: stdout });
+  } catch (error) {
+    console.error('Error marking all read:', error);
+    return res.status(500).json({ error: 'Failed to mark all read' });
+  }
+});
+
+app.post('/api/rss/scan', async (req, res) => {
+  try {
+    const args = ['scan'];
+    if (req.body?.blogName) args.push(String(req.body.blogName));
+    if (req.body?.workers) args.push('--workers', String(req.body.workers));
+    if (req.body?.silent) args.push('--silent');
+
+    const stdout = await runBlogwatcher(args);
+    return res.json({ ok: true, output: stdout, command: `blogwatcher ${args.join(' ')}` });
   } catch (error) {
     console.error('Error scanning blogs:', error);
     return res.status(500).json({ error: 'Failed to scan blogs' });
