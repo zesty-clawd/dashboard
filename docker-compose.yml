@@ -4,6 +4,17 @@ services:
   dashboard:
     build: .
     container_name: zesty-dashboard
+    environment:
+      - PORT=3000
+      - MEMORY_DIR=/data/memory
+      - STICKERS_DIR=/data/stickers
+      - CRON_DIR=/data/cron
+    volumes:
+      - /Users/tim/.openclaw/workspace/memory:/data/memory:ro
+      - /Users/tim/.openclaw/workspace/media/stickers:/data/stickers:ro
+      - /Users/tim/.openclaw/cron:/data/cron
+      - /Users/tim/.blogwatcher:/root/.blogwatcher
     ports:
-      - "3000:3000"
+      # Host 3000 is already occupied on this machine, so we bind to 3001.
+      - "3001:3000"
     restart: always

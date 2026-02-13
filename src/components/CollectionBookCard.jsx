@@ -6,6 +6,7 @@ const CollectionBookCard = () => {
   const [stickers, setStickers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSticker, setSelectedSticker] = useState(null);
+  const [showGallery, setShowGallery] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,12 +99,59 @@ const CollectionBookCard = () => {
             ))}
           </div>
 
-          <button className="w-full mt-6 py-2 text-sm text-slate-400 hover:text-white 
-            hover:bg-slate-700 rounded-lg transition-all flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowGallery(true)}
+            className="w-full mt-6 py-2 text-sm text-slate-400 hover:text-white 
+            hover:bg-slate-700 rounded-lg transition-all flex items-center justify-center gap-2"
+          >
             <Trophy size={14} />
             View full collection
           </button>
         </>
+      )}
+
+      {/* Full collection modal */}
+      {showGallery && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowGallery(false)}
+        >
+          <div
+            className="bg-slate-800 rounded-2xl p-6 max-w-3xl w-full border border-slate-700 max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold text-white">Full Collection</h3>
+              <button
+                onClick={() => setShowGallery(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {stickers.map((sticker) => (
+                <button
+                  key={sticker.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedSticker(sticker);
+                    setShowGallery(false);
+                  }}
+                  className="bg-slate-900 rounded-xl p-2 border border-slate-700 hover:border-orange-500 transition-all text-left"
+                >
+                  <img
+                    src={sticker.url || `/stickers/${sticker.filename}`}
+                    alt={sticker.name}
+                    className="w-full h-28 object-cover rounded"
+                  />
+                  <p className="text-xs text-slate-300 mt-2 truncate">{sticker.name}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Sticker detail modal */}
