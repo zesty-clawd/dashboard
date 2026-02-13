@@ -9,6 +9,8 @@ const RssFeedsCard = () => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [discordTarget, setDiscordTarget] = useState('868856901465677825');
 
   const [form, setForm] = useState(emptyForm);
   const [editingName, setEditingName] = useState('');
@@ -90,6 +92,17 @@ const RssFeedsCard = () => {
     }
   };
 
+  const sendDigestToDiscord = async () => {
+    try {
+      setError('');
+      setNotice('');
+      await dataService.triggerRssDigestToDiscord(discordTarget.trim());
+      setNotice('已排程：掃描 + 摘要會送到 Discord 私聊。');
+    } catch {
+      setError('送出 Discord 摘要任務失敗');
+    }
+  };
+
   const markRead = async (id) => {
     try {
       await dataService.markRssArticleRead(id);
@@ -135,7 +148,26 @@ const RssFeedsCard = () => {
         </button>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-slate-900/60 border border-slate-700 rounded-xl p-3">
+        <label className="text-xs text-slate-400 block md:col-span-3">
+          Discord 私聊目標 ID
+          <input
+            className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-2 text-sm"
+            value={discordTarget}
+            onChange={(e) => setDiscordTarget(e.target.value)}
+          />
+        </label>
+        <button
+          type="button"
+          onClick={sendDigestToDiscord}
+          className="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm self-end"
+        >
+          掃描+摘要送 Discord
+        </button>
+      </div>
+
       {error && <p className="text-sm text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2">{error}</p>}
+      {notice && <p className="text-sm text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2">{notice}</p>}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         <div className="xl:col-span-2 bg-slate-900/70 border border-slate-700 rounded-xl p-4">

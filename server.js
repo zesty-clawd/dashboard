@@ -14,6 +14,7 @@ const STICKERS_DIR = process.env.STICKERS_DIR || '/data/stickers';
 const DIARIES_DIR = process.env.DIARIES_DIR || path.join(MEMORY_DIR, 'diaries');
 const CRON_DIR = process.env.CRON_DIR || '/data/cron';
 const CRON_JOBS_FILE = path.join(CRON_DIR, 'jobs.json');
+const DEFAULT_DISCORD_DM_TARGET = process.env.DISCORD_DM_TARGET || '868856901465677825';
 const execFileAsync = promisify(execFile);
 
 app.use(cors());
@@ -486,6 +487,48 @@ app.post('/api/rss/scan', async (req, res) => {
   } catch (error) {
     console.error('Error scanning blogs:', error);
     return res.status(500).json({ error: 'Failed to scan blogs' });
+  }
+});
+
+app.post('/api/rss/scan-summary-discord', async (req, res) => {
+  try {
+    const target = (req.body?.target || DEFAULT_DISCORD_DM_TARGET).toString().trim();
+    if (!target) {
+      return res.status(400).json({ error: 'Discord target is required' });
+    }
+
+    const now = Date.now();
+    const at = new Date(now + 15 * 1000).toISOString();
+    const job = touchJob({
+      id: crypto.randomUUID(),
+      name: `RSS scan+summary -> Discord ${target}`,
+      description: 'Scan RSS and send digest to Discord DM',
+      enabled: true,
+      schedule: { kind: 'at', at },
+      sessionTarget: 'isolated',
+      wakeMode: 'now',
+      payload: {
+        kind: 'agentTurn',
+        timeoutSeconds: 1200,
+        message:
+          'Run `blogwatcher scan` first. Then read latest unread items via `blogwatcher articles` and send a concise Traditional Chinese digest (5-10 bullets, grouped by topic) to the configured recipient via delivery. Include top items and why they matter. Avoid technical logs.',
+      },
+      delivery: {
+        mode: 'announce',
+        channel: 'discord',
+        to: target,
+        bestEffort: true,
+      },
+    });
+
+    const data = await readCronJobs();
+    data.jobs.push(job);
+    await writeCronJobs(data);
+
+    return res.status(201).json({ ok: true, job });
+  } catch (error) {
+    console.error('Error creating rss scan+summary job:', error);
+    return res.status(500).json({ error: 'Failed to queue scan+summary job' });
   }
 });
 

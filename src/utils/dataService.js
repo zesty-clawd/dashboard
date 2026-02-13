@@ -198,6 +198,16 @@ class DataService {
     if (!response.ok) throw new Error('Failed to mark all RSS read');
     return response.json();
   }
+
+  async triggerRssDigestToDiscord(target) {
+    const response = await fetch('/api/rss/scan-summary-discord', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target }),
+    });
+    if (!response.ok) throw new Error('Failed to queue RSS digest to Discord');
+    return response.json();
+  }
 }
 
 export default new DataService();
