@@ -374,20 +374,26 @@ app.get('/api/cron/runs', async (req, res) => {
     const files = await fs.readdir(CRON_RUNS_DIR);
     const runs = [];
 
+    const jobsData = await readCronJobs();
+    const jobMap = new Map(jobsData.jobs.map((j) => [j.id, j.name]));
+
     for (const file of files) {
       if (!file.endsWith('.jsonl')) continue;
       const filePath = path.join(CRON_RUNS_DIR, file);
       const stat = await fs.stat(filePath);
       const content = await fs.readFile(filePath, 'utf8');
       const lines = content.trim().split('\n');
-      
+
       let lastLine = {};
       try {
         lastLine = lines.length > 0 ? JSON.parse(lines[lines.length - 1]) : {};
-      } catch { continue; }
+      } catch {
+        continue;
+      }
 
       runs.push({
         jobId: lastLine.jobId || file.replace('.jsonl', ''),
+        jobName: jobMap.get(lastLine.jobId) || lastLine.jobId || 'Unknown Job',
         runId: lastLine.sessionId || '',
         status: lastLine.status || 'unknown',
         summary: lastLine.summary || '',

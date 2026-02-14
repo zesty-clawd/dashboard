@@ -97,8 +97,8 @@ const CronRunsCard = ({ limit = 20, compact = false }) => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     {getStatusIcon(run.status)}
-                    <span className="text-sm font-medium text-slate-200 truncate max-w-[120px]">
-                      {getStatusLabel(run.status)}
+                    <span className="text-sm font-medium text-slate-200 truncate max-w-[150px]">
+                      {run.jobName || getStatusLabel(run.status)}
                     </span>
                     <span className="text-xs text-slate-500">
                       {formatDuration(run.durationMs)}
