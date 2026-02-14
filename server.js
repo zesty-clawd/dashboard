@@ -550,7 +550,7 @@ app.post('/api/rss/scan-summary-discord', async (req, res) => {
         kind: 'agentTurn',
         timeoutSeconds: 1200,
         message:
-          'Run `blogwatcher scan` first. Then read latest unread items via `blogwatcher articles` and send a concise Traditional Chinese digest (5-10 bullets, grouped by topic) to the configured recipient via delivery. Include top items and why they matter. Avoid technical logs.',
+          'Run `blogwatcher scan` first. Then read latest unread items via `blogwatcher articles` and send a concise Traditional Chinese digest (5-10 bullets, grouped by topic) to the specified Discord user. Include top items and why they matter. IMPORTANT: You MUST send the message to Discord user ' + target + ' even if it is not your default channel.',
       },
       delivery: {
         mode: 'announce',

@@ -172,8 +172,13 @@ const Dashboard = () => {
   );
 
   const renderCronView = () => (
-    <div className="space-y-6">
-      <CronCalendarCard />
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="xl:col-span-2">
+        <CronCalendarCard />
+      </div>
+      <div>
+        <CronRunsCard compact={true} limit={15} />
+      </div>
     </div>
   );
 
