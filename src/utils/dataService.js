@@ -208,6 +208,12 @@ class DataService {
     if (!response.ok) throw new Error('Failed to queue RSS digest to Discord');
     return response.json();
   }
+
+  async fetchCronRuns(limit = 20) {
+    const response = await fetch(`/api/cron/runs?limit=${limit}`);
+    if (!response.ok) throw new Error('Failed to fetch cron runs');
+    return response.json();
+  }
 }
 
 export default new DataService();

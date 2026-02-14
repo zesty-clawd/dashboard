@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, Activity, Target, Trophy, Menu, X, BookOpen, CalendarDays, Rss } from 'lucide-react';
+import { Zap, Activity, Target, Trophy, Menu, X, BookOpen, CalendarDays, Rss, History } from 'lucide-react';
 import HealthStatusCard from './components/HealthStatusCard';
 import KarmaCard from './components/KarmaCard';
 import QuestStatsCard from './components/QuestStatsCard';
@@ -7,6 +7,7 @@ import CollectionBookCard from './components/CollectionBookCard';
 import SystemLogsCard from './components/SystemLogsCard';
 import DiaryCard from './components/DiaryCard';
 import CronCalendarCard from './components/CronCalendarCard';
+import CronRunsCard from './components/CronRunsCard';
 import RssFeedsCard from './components/RssFeedsCard';
 import dataService from './utils/dataService';
 
@@ -17,6 +18,7 @@ const navItems = [
   { key: 'karma', label: 'Karma', icon: Zap },
   { key: 'diary', label: 'Diary', icon: BookOpen },
   { key: 'cron', label: 'Cron', icon: CalendarDays },
+  { key: 'cronRuns', label: '執行紀錄', icon: History },
   { key: 'rss', label: 'RSS', icon: Rss },
 ];
 
@@ -27,6 +29,7 @@ const viewMeta = {
   karma: { title: 'Karma', subtitle: 'Moltbook 聲望與近期動態' },
   diary: { title: 'Diary', subtitle: 'Zesty 的日記即時同步' },
   cron: { title: 'Cron Scheduler', subtitle: '以日曆方式管理排程（新增、編輯、刪除、停用/啟用）' },
+  cronRuns: { title: 'Cron 執行紀錄', subtitle: '查看定時任務的執行歷史與結果' },
   rss: { title: 'RSS Sources', subtitle: '管理 blogwatcher 的 RSS 來源（新增、編輯、移除）' },
 };
 
@@ -174,6 +177,12 @@ const Dashboard = () => {
     </div>
   );
 
+  const renderCronRunsView = () => (
+    <div className="space-y-6">
+      <CronRunsCard />
+    </div>
+  );
+
   const renderRssView = () => (
     <div className="space-y-6">
       <RssFeedsCard />
@@ -192,6 +201,8 @@ const Dashboard = () => {
         return renderDiaryView();
       case 'cron':
         return renderCronView();
+      case 'cronRuns':
+        return renderCronRunsView();
       case 'rss':
         return renderRssView();
       case 'dashboard':

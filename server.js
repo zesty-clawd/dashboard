@@ -14,6 +14,7 @@ const STICKERS_DIR = process.env.STICKERS_DIR || '/data/stickers';
 const DIARIES_DIR = process.env.DIARIES_DIR || path.join(MEMORY_DIR, 'diaries');
 const CRON_DIR = process.env.CRON_DIR || '/data/cron';
 const CRON_JOBS_FILE = path.join(CRON_DIR, 'jobs.json');
+const CRON_RUNS_DIR = path.join(CRON_DIR, 'runs');
 const DEFAULT_DISCORD_DM_TARGET = process.env.DISCORD_DM_TARGET || '868856901465677825';
 const execFileAsync = promisify(execFile);
 
@@ -363,6 +364,44 @@ app.delete('/api/cron/jobs/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting cron job:', error);
     return res.status(500).json({ error: 'Failed to delete cron job' });
+  }
+});
+
+// API: cron job runs/history
+app.get('/api/cron/runs', async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
+    const files = await fs.readdir(CRON_RUNS_DIR);
+    const runs = [];
+
+    for (const file of files) {
+      if (!file.endsWith('.jsonl')) continue;
+      const filePath = path.join(CRON_RUNS_DIR, file);
+      const stat = await fs.stat(filePath);
+      const content = await fs.readFile(filePath, 'utf8');
+      const lines = content.trim().split('\n');
+      
+      let lastLine = {};
+      try {
+        lastLine = lines.length > 0 ? JSON.parse(lines[lines.length - 1]) : {};
+      } catch { continue; }
+
+      runs.push({
+        jobId: lastLine.jobId || file.replace('.jsonl', ''),
+        runId: lastLine.sessionId || '',
+        status: lastLine.status || 'unknown',
+        summary: lastLine.summary || '',
+        durationMs: lastLine.durationMs || 0,
+        runAtMs: lastLine.runAtMs || stat.mtimeMs,
+        finishedAtMs: lastLine.finishedAtMs || (lastLine.runAtMs + (lastLine.durationMs || 0)),
+      });
+    }
+
+    runs.sort((a, b) => b.runAtMs - a.runAtMs);
+    return res.json({ runs: runs.slice(0, limit) });
+  } catch (error) {
+    console.error('Error reading cron runs:', error);
+    return res.status(500).json({ error: 'Failed to read cron runs' });
   }
 });
 
