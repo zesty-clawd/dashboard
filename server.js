@@ -15,7 +15,7 @@ const DIARIES_DIR = process.env.DIARIES_DIR || path.join(MEMORY_DIR, 'diaries');
 const CRON_DIR = process.env.CRON_DIR || '/data/cron';
 const CRON_JOBS_FILE = path.join(CRON_DIR, 'jobs.json');
 const CRON_RUNS_DIR = path.join(CRON_DIR, 'runs');
-const DEFAULT_DISCORD_DM_TARGET = process.env.DISCORD_DM_TARGET || '868856901465677825';
+const DEFAULT_DISCORD_DM_TARGET = process.env.DISCORD_DM_TARGET || 'channel:1466010122227548170';
 const execFileAsync = promisify(execFile);
 
 app.use(cors());

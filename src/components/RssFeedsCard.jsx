@@ -10,7 +10,7 @@ const RssFeedsCard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [discordTarget, setDiscordTarget] = useState('868856901465677825');
+  const [discordTarget, setDiscordTarget] = useState('channel:1466010122227548170');
 
   const [form, setForm] = useState(emptyForm);
   const [editingName, setEditingName] = useState('');
@@ -150,7 +150,7 @@ const RssFeedsCard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-slate-900/60 border border-slate-700 rounded-xl p-3">
         <label className="text-xs text-slate-400 block md:col-span-3">
-          Discord 私聊目標 ID
+          Discord 目標（channel:... 或 user id）
           <input
             className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-2 text-sm"
             value={discordTarget}
