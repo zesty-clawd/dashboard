@@ -543,10 +543,11 @@ app.post('/api/rss/scan-summary-discord', async (req, res) => {
     }
 
     const now = Date.now();
-    const at = new Date(now + 15 * 1000).toISOString();
+    // Queue almost immediately to feel responsive in the dashboard.
+    const at = new Date(now + 3 * 1000).toISOString();
     const job = touchJob({
       id: crypto.randomUUID(),
-      name: `RSS scan+summary -> Discord ${target}`,
+      name: `RSS scan+summary -> Discord ${target} @${new Date(now).toISOString()}`,
       description: 'Scan RSS and send digest to Discord DM',
       enabled: true,
       schedule: { kind: 'at', at },
